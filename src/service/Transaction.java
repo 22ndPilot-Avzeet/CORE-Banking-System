@@ -1,21 +1,16 @@
 package service;
 
-import model.Account;
 import java.lang.Thread;
 import server.*;
 import dao.*;
 import java.sql.*;
-import java.text.DateFormat;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-
+import java.util.*;
 import queue.*;
 
 public class Transaction extends Thread
 {
     public static LinkedHashMap<String,Transaction> qu=new LinkedHashMap<>();
-    String tx_id,from_acc,to_acc,tx_type,status;
+    String tx_id,from_acc,to_acc,tx_type,status,processedBy;
     double amount;
     Timestamp timestamp;
 
@@ -109,7 +104,7 @@ public class Transaction extends Thread
 
             while(rs.next())
             {
-                if(!rs.getString(6).equalsIgnoreCase("SUCCESS")) {
+                if(!rs.getString(5).equalsIgnoreCase("SUCCESS")) {
                    qu.put(rs.getString(1),new Transaction(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getDouble(6),rs.getTimestamp(7)));
                   // i++;
                 }

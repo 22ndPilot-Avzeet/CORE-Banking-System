@@ -1,9 +1,7 @@
 package server;
 
 import service.*;
-import fraud.*;
-
-import javax.swing.*;
+import queue.*;
 import java.util.*;
 
 public class ServerB extends Thread
@@ -41,6 +39,8 @@ public class ServerB extends Thread
 
                         Transaction.qu.remove(first.getKey());
 
+                        PendingTransaction.pending(Transaction.qu);
+
                         sb[i].start();
                     }
                 }
@@ -55,6 +55,8 @@ public class ServerB extends Thread
 
                     Transaction.qu.remove(first.getKey());
 
+                    PendingTransaction.pending(Transaction.qu);
+
                     sb.start();
                 }
             }
@@ -67,30 +69,7 @@ public class ServerB extends Thread
     {
         try
         {
-            /*synchronized (Bpq) {
-                while (Bpq.isEmpty())
-                    wait();*/
-            FraudDetection fd = new FraudDetection(t);
 
-            if(fd.checkFraud())
-            {
-                t.setStatus("FRAUD");
-
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(
-                            null,
-                            "******** FRAUD DETECTED ********\n\n"
-                                    + "Transaction ID : " + t.getTx_id()
-                                    + "\nFrom Account : " + t.getFrom_acc()
-                                    + "\nTo Account : " + t.getTo_acc()
-                                    + "\nAmount : ₹" + t.getAmount()
-                                    + "\nReason : " + fd.getReason(),
-                            "Fraud Alert",
-                            JOptionPane.WARNING_MESSAGE);
-                });
-
-                return;
-            }
                 if (!t.getStatus().equalsIgnoreCase("success")) {
                     switch (t.getTx_type().toUpperCase()) {
                         case "INTRA_BANK" -> new Transaction_type(t).intra_bank();

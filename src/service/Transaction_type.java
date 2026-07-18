@@ -2,21 +2,23 @@ package service;
 import auth.*;
 import dao.*;
 import model.*;
-import auth.TOTP;
-import utils.BankConstants;
-
+import utils.*;
+import fraud.*;
 import java.sql.*;
 import java.time.LocalDate;
+import queue.*;
 
 public class Transaction_type
 {
     public Transaction t;
    public boolean proceed=false;
     public Connection con;
+    Notification n;
 
     public Transaction_type(Transaction t) throws Throwable {
         this.t = t;
         this.con = DBConnection.getConnectionAcc();
+        n = new Notification();
         if(account_exists.account_check(t.getTo_acc())&&account_exists.account_check(t.getFrom_acc())&& t.getAmount()>0)
             proceed=true;
     }
@@ -25,7 +27,7 @@ public class Transaction_type
     public void tran_update(String stat) throws Throwable
     {
         try {
-            String update="Update Transactions set status=?,timestamp=? where txn_id=?";
+            String update="Update TRANSACTIONS set status=?,timestamp=? where txn_id=?";
             PreparedStatement ps3=con.prepareStatement(update);
             ps3.setString(1,stat);
             ps3.setTimestamp(2, java.sql.Timestamp.from(java.time.Instant.now()));
@@ -56,7 +58,7 @@ public class Transaction_type
                     while (rs.next()) {
                         balance = rs.getDouble(1);
                     }
-                    String deposit = "Update account set balance=?,updated_at=? where account_number=?;";
+                    String deposit = "Update ACCOUNTS set balance=?,updated_at=? where account_number=?;";
                     PreparedStatement ps = con.prepareStatement(deposit);
                     ps.setDouble(1, balance + t.getAmount());
                     ps.setDate(2, Date.valueOf(LocalDate.now()));
@@ -92,7 +94,7 @@ public class Transaction_type
                     if (t.getAmount() > (balance - BankConstants.min_balance)) {
                         return false;
                     } else {
-                        String withdraw = "Update account set balance=?,updated_at=? where account_number=?;";
+                        String withdraw = "Update ACCOUNTS set balance=?,updated_at=? where account_number=?;";
                         PreparedStatement ps = con.prepareStatement(withdraw);
                         ps.setDouble(1, balance - t.getAmount());
                         ps.setDate(2, Date.valueOf(LocalDate.now()));
@@ -114,27 +116,43 @@ public class Transaction_type
         try {
             if(proceed)
             {
+                FraudDetection fd = new FraudDetection(t);
+
+                if(fd.checkFraud())
+                {
+                    n.fraudAlert(t, fd.getReason());
+
+                    con.rollback();
+
+                    t.setStatus("FRAUD");
+
+                    tran_update("FRAUD");
+
+                    return;
+                }
+
                 TOTP totp=new TOTP();
 
                 if(!totp.verify(t))
                 {
                     con.rollback();
 
-                    t.setStatus("FAILED");
+                    t.setStatus("OTP_FAILED");
 
-                    tran_update("FAILED");
+                    tran_update("OTP_FAILED");
 
                     return;
                 }
                 boolean b=withdraww();
                 if(b) {
                     depositt();
+                    t.setStatus("SUCCESS");
                     tran_update("SUCCESS");
                     con.commit();
                 }
                 else {
                     con.rollback();
-                    t.setStatus("Failed");
+                    t.setStatus("FAILED");
                     tran_update("FAILED");
                 }
             }
@@ -150,6 +168,7 @@ public class Transaction_type
             tran_update("FAILED");
         }
         finally{
+            TransactionHistory.addTransaction(t, Thread.currentThread().getName());
             con.setAutoCommit(true);
         }
     }
@@ -160,6 +179,7 @@ public class Transaction_type
             if(proceed)
             {
                 depositt();
+                t.setStatus("SUCCESS");
                 tran_update("SUCCESS");
                 con.commit();
             }
@@ -175,6 +195,7 @@ public class Transaction_type
             tran_update("FAILED");
         }
         finally{
+            TransactionHistory.addTransaction(t, Thread.currentThread().getName());
             con.setAutoCommit(true);
         }
     }
@@ -184,13 +205,28 @@ public class Transaction_type
         try {
             if(proceed)
             {
+                FraudDetection fd = new FraudDetection(t);
+
+                if(fd.checkFraud())
+                {
+                    n.fraudAlert(t, fd.getReason());
+
+                    con.rollback();
+
+                    t.setStatus("FRAUD");
+
+                    tran_update("FRAUD");
+
+                    return;
+                }
+
                 TOTP totp=new TOTP();
 
                 if(!totp.verify(t))
                 {
                     con.rollback();
 
-                    t.setStatus("FAILED");
+                    t.setStatus("OTP_FAILED");
 
                     tran_update("OTP_FAILED");
 
@@ -198,27 +234,29 @@ public class Transaction_type
                 }
                 boolean b=withdraww();
                 if(b) {
+                    t.setStatus("SUCCESS");
                     tran_update("SUCCESS");
                     con.commit();
                 }
                 else {
                     con.rollback();
-                    t.setStatus("Failed");
+                    t.setStatus("FAILED");
                     tran_update("FAILED");
                 }
             }
             else
             {
                 con.rollback();
-                t.setStatus("Failed");
+                t.setStatus("FAILED");
                 tran_update("FAILED");
             }
         } catch (Exception e) {
             con.rollback();
-            t.setStatus("Failed");
+            t.setStatus("FAILED");
             tran_update("FAILED");
         }
         finally{
+            TransactionHistory.addTransaction(t, Thread.currentThread().getName());
             con.setAutoCommit(true);
         }
     }
@@ -233,15 +271,16 @@ public class Transaction_type
             else
             {
                 con.rollback();
-                t.setStatus("Failed");
+                t.setStatus("FAILED");
                 tran_update("FAILED");
             }
         } catch (Exception e) {
             con.rollback();
-            t.setStatus("Failed");
+            t.setStatus("FAILED");
             tran_update("FAILED");
         }
         finally{
+            TransactionHistory.addTransaction(t, Thread.currentThread().getName());
             con.setAutoCommit(true);
         }
     }

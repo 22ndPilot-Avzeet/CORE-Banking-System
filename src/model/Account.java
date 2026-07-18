@@ -1,21 +1,14 @@
 package model;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Scanner;
 
-public class Account
+public abstract class Account
 {
     int userid;
     String accountNumber;
-    String accountHolderName;
     double currentBalance;
     double transferAmount;
-    String status;
-    LocalDateTime createdAt;
     double loanamount;
     double interestRate;
-    long dailyTransferlimit;
 
     public Account(int userid,String accountNumber, double currentBalance) {
         this.userid = userid;

@@ -54,7 +54,7 @@ public class FraudDetection
 
     public boolean frequencyCheck() throws Exception
     {
-        String sql="SELECT COUNT(*) FROM Transactions WHERE from_account=? AND timestamp>=NOW()-INTERVAL '1 minute';";
+        String sql="SELECT COUNT(*) FROM TRANSACTIONS WHERE from_account=? AND timestamp>=NOW()-INTERVAL '1 minute';";
         PreparedStatement ps=con.prepareStatement(sql);
         ps.setString(1,t.getFrom_acc());
         ResultSet rs=ps.executeQuery();
@@ -64,7 +64,8 @@ public class FraudDetection
 
     public boolean dailyLimitCheck() throws Exception
     {
-        String sql="SELECT COALESCE(SUM(amount),0) FROM Transactions WHERE from_account=? AND DATE(timestamp)=CURRENT_DATE AND status='SUCCESS';";
+        //String sql="SELECT COALESCE(SUM(amount),0) FROM Transactions WHERE from_account=? AND DATE(timestamp)=CURRENT_DATE AND status='SUCCESS';";
+        String sql="SELECT SUM(amount) FROM ( SELECT amount FROM TRANSACTIONS WHERE from_account=? AND DATE(timestamp)=CURRENT_DATE AND status='SUCCESS' UNION ALL SELECT 0) AS combined_data;";
         PreparedStatement ps=con.prepareStatement(sql);
         ps.setString(1,t.getFrom_acc());
         ResultSet rs=ps.executeQuery();
@@ -75,7 +76,7 @@ public class FraudDetection
 
     public boolean accountStatusCheck() throws Exception
     {
-        String sql="SELECT status FROM Accounts WHERE account_number=?;";
+        String sql="SELECT status FROM ACCOUNTS WHERE account_number=?;";
         PreparedStatement ps=con.prepareStatement(sql);
         ps.setString(1,t.getFrom_acc());
         ResultSet rs=ps.executeQuery();

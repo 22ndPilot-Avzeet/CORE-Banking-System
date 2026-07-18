@@ -8,8 +8,8 @@ public class login
 
     String loginuser(String u,String p)
     {//add trial attempts
-        if(Customer.username.equalsIgnoreCase(u)&& Customer.pass.equals(p))
-            return "Customer";
+        if(Employee.username.equalsIgnoreCase(u)&& Employee.pass.equals(p))
+            return "Employee";
         else if (Manager.userName.equalsIgnoreCase(u)&&Manager.pass.equals(p))
             return "Manager";
         else

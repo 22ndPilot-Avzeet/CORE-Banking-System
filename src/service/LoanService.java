@@ -1,10 +1,7 @@
 package service;
 import dao.DBConnection;
 import auth.account_exists;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.time.LocalDate;
+import java.sql.*;
 import java.util.*;
 
 public class LoanService
@@ -37,28 +34,58 @@ public class LoanService
     }
 
 
-    LoanService info(String an)
+    LoanService info(String an) throws Exception
     {
-        return new LoanService(0,0,0,0,false,false,0);
+        /*String query = "SELECT salary, age, credit_score, monthly_income, loan_status, status, avg_balance FROM customer_details WHERE account_number=?";
+
+        PreparedStatement ps = con.prepareStatement(query);
+        ps.setString(1, an);
+
+        ResultSet rs = ps.executeQuery();
+
+        if(rs.next())
+        {
+            return new LoanService(
+                    rs.getDouble("salary"),
+                    rs.getInt("age"),
+                    rs.getDouble("credit_score"),
+                    rs.getDouble("monthly_income"),
+                    rs.getBoolean("loan_status"),
+                    rs.getString("status").equalsIgnoreCase("ACTIVE"),
+                    rs.getDouble("avg_balance")
+            );
+        }*/
+
+        return null;
     }
 
-
-    void loan()
+    void loan() throws Throwable
     {
         try
         {
             System.out.println("Enter account number");
             String an=Sc.next();
-            if(account_exists.exists)
-            {
+            if(account_exists.account_check(an))            {
                 if (loan_condition(an)) {
                     System.out.println("loan approved");
                     System.out.println("enter loan amount");
                     loan_amount = Sc.nextDouble();
-                    String add = "insert into loan values(?,?,?)";
+                    if(loan_amount <= 0)
+                    {
+                        System.out.println("Invalid loan amount.");
+                        return;
+                    }
+                    if(loan_amount > salary * 24)
+                    {
+                        System.out.println("Loan amount exceeds eligibility.");
+                        return;
+                    }
+                    String add = "INSERT INTO LOANS(account_number, loan_amount, loan_status) VALUES(?,?,?)";
                     PreparedStatement ps = con.prepareCall(add);
                     ps.setString(1, an);
-                    //add others values
+                    ps.setString(1, an);
+                    ps.setDouble(2, loan_amount);
+                    ps.setString(3, "ACTIVE");
                     ps.executeUpdate();
                     System.out.println();
                 }
@@ -71,15 +98,14 @@ public class LoanService
         }
     }
 
-    boolean loan_condition(String an)
-    {
+    boolean loan_condition(String an) throws Exception {
         LoanService ls=info(an);
         if(ls.acc_status&&(!ls.loan_status))
         {
-            if(ls.credit_score>=700&&ls.age>=21&&ls.income>=25000&&ls.avg_balance>=20000)
-                return true;
-            else
-                return false;
+            return ls.credit_score >= 700
+                    && ls.age >= 21
+                    && ls.income >= 25000
+                    && ls.avg_balance >= 20000;
         }
         else
             return false;
