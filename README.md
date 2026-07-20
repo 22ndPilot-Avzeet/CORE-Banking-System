@@ -1,4 +1,4 @@
-# Enterprise Banking Transaction Processing System (EBTPS)
+# CORE Banking System (EBTPS)
 
 ## Overview
 EBTPS is a desktop-based banking application built entirely in **Core Java**. It serves as a comprehensive academic demonstration of advanced Java programming concepts, software architecture, and database management. The application features two distinct portals: a Customer Dashboard for standard banking operations (transfers, loans, analytics), and a Manager Dashboard for administrative oversight (account management, system reporting).
@@ -36,21 +36,23 @@ The system strictly adheres to the **Model-View-Controller (MVC)** architectural
 
 ### Prerequisites
 1.  **Java Development Kit (JDK) 8 or higher**.
-2.  **PostgreSQL** installed and running locally on port 5432.
-3.  **PostgreSQL JDBC Driver** included in the project classpath.
+2.  The provided **PostgreSQL JDBC Driver** (`postgresql.jar`) included in the project root.
 
-### Database Initialization
-1.  Create a PostgreSQL database named `ebtps`.
-2.  Execute the `resources/schema.sql` script to generate the tables.
-3.  Execute the `resources/seed_data.sql` script to populate the database with default users and accounts.
+### Database Connection
+The application is pre-configured to connect to a cloud-hosted **Supabase PostgreSQL database**. No local database installation or initialization is required. The schema and default users are already populated on the cloud server.
 
 ### Running the Application
-Compile the source files and execute the main entry point:
+A batch script is provided to easily run the application on Windows:
+```cmd
+run.bat
+```
+
+Alternatively, you can compile the source files and execute the main entry point manually:
 ```bash
 javac -d bin -sourcepath src src/com/ebtps/main/Application.java
-java -cp bin;path/to/postgresql.jar com.ebtps.main.Application
+java -cp "bin;postgresql.jar" com.ebtps.main.Application
 ```
-*(Note: Modify the classpath separator `:` or `;` depending on your OS).*
+*(Note: Modify the classpath separator `:` or `;` depending on your OS. For Windows, use `;`).*
 
 ## Default Test Credentials
 
